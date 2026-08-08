@@ -1,0 +1,41 @@
+{
+  "name": "mycrm-client",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx --no-install react-scripts start",
+    "dev": "npx --no-install react-scripts start",
+    "build": "npx --no-install react-scripts build",
+    "test": "npx --no-install react-scripts test"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.3",
+    "dotenv": "^16.4.5",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.10.2",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.2",
+    "react-icons": "^5.0.0",
+    "react-scripts": "5.0.1",
+    "react-toastify": "^9.1.3",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

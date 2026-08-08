@@ -1,0 +1,13 @@
+{
+  "name": "mycrm",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "server": "npm run start --prefix server",
+    "client": "npm run start --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
