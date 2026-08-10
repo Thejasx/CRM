@@ -14,15 +14,7 @@ const LoginForm = () => {
     await login(email, password);
   };
 
-  const handleDemoAdmin = () => {
-    setEmail('admin@crm.com');
-    setPassword('admin123');
-  };
 
-  const handleDemoStaff = () => {
-    setEmail('staff@crm.com');
-    setPassword('staff123');
-  };
 
   if (isAuthenticated) {
     if (user?.role === 'admin') navigate('/admin');
@@ -43,6 +35,42 @@ const LoginForm = () => {
           <div className="login-brand-box">
             <span className="login-logo-black">dipch</span>
             <span className="fw-extrabold text-dark fs-4">CRM</span>
+          </div>
+          {/* Gemini AI Badge */}
+          <div className="gemini-ai-badge" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '7px',
+            marginTop: '10px',
+            padding: '5px 13px 5px 9px',
+            borderRadius: '100px',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(168,85,247,0.12) 50%, rgba(59,130,246,0.10) 100%)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 2px 12px rgba(99,102,241,0.15)',
+            cursor: 'default',
+            userSelect: 'none',
+          }}>
+            {/* Gemini Spark Icon */}
+            <svg width="16" height="16" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+              <defs>
+                <linearGradient id="gemGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="50%" stopColor="#a855f7" />
+                  <stop offset="100%" stopColor="#3b82f6" />
+                </linearGradient>
+              </defs>
+              <path d="M14 2C14 2 15.5 9.5 22 14C15.5 18.5 14 26 14 26C14 26 12.5 18.5 6 14C12.5 9.5 14 2 14 2Z" fill="url(#gemGrad)" />
+            </svg>
+            <span style={{
+              fontSize: '11.5px',
+              fontWeight: 600,
+              background: 'linear-gradient(90deg, #6366f1, #a855f7, #3b82f6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '0.01em',
+            }}>Gemini AI Integrated</span>
           </div>
         </div>
 
@@ -84,19 +112,6 @@ const LoginForm = () => {
               Log in to Dashboard →
             </Button>
           </Form>
-
-          {/* Quick Demo Credentials */}
-          <div className="pt-3 border-top text-center">
-            <div className="small text-muted mb-2 fw-semibold">⚡ 1-Click Quick Demo Login:</div>
-            <div className="d-flex justify-content-center gap-2">
-              <Button size="sm" variant="outline-dark" onClick={handleDemoAdmin} style={{ borderRadius: '8px', fontSize: '12px' }}>
-                Admin Access
-              </Button>
-              <Button size="sm" variant="outline-secondary" onClick={handleDemoStaff} style={{ borderRadius: '8px', fontSize: '12px' }}>
-                Staff Access
-              </Button>
-            </div>
-          </div>
         </div>
 
         {/* Footer info */}
