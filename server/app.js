@@ -27,13 +27,21 @@ const io = new SocketIOServer(server, {
 // Make io accessible to routes/controllers via app locals
 app.locals.io = io;
 
-// CORS — allow requests from the frontend (env var) or any origin in development
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:3000']
-  : true; // true = allow all origins (safe for open APIs; lock down in production)
+// CORS — allow requests from the frontend
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://crm-bay-six-98.vercel.app';
+
+const allowedOrigins = [
+  FRONTEND_URL,
+  'http://localhost:3000',
+];
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin} not allowed`));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
