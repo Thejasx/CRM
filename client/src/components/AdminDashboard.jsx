@@ -25,10 +25,10 @@ const AdminDashboard = () => {
           <div>
             {/* Logo */}
             <div className="crm-brand">
-              <div className="crm-brand-logo">
-                ⚡
+              <div className="login-logo-black py-1 px-2 me-1" style={{ fontSize: '16px', borderRadius: '8px' }}>
+                dipch
               </div>
-              <span className="crm-brand-name">CRM</span>
+              <span className="crm-brand-name" style={{ fontSize: '18px', fontWeight: 800 }}>CRM</span>
             </div>
 
             {/* Navigation Menu */}

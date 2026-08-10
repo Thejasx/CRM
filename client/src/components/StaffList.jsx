@@ -9,6 +9,7 @@ const StaffList = () => {
   const [staff, setStaff] = useState([]);
   const [sales, setSales] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newStaff, setNewStaff] = useState({ name: '', email: '', temporaryPassword: '' });
 
@@ -18,14 +19,16 @@ const StaffList = () => {
 
   const fetchStaffData = async () => {
     try {
-      const [sRes, salesRes, meetRes] = await Promise.all([
+      const [sRes, salesRes, meetRes, leadsRes] = await Promise.all([
         api.get('/admin/staff'),
         api.get('/sales').catch(() => ({ data: [] })),
-        api.get('/meetings').catch(() => ({ data: [] }))
+        api.get('/meetings').catch(() => ({ data: [] })),
+        api.get('/leads').catch(() => ({ data: [] }))
       ]);
       setStaff(sRes.data || []);
       setSales(salesRes.data || []);
       setMeetings(meetRes.data || []);
+      setLeads(leadsRes.data || []);
     } catch (err) {
       console.error('Error fetching staff list:', err);
       toast.error('Failed to load staff management data');
@@ -37,11 +40,12 @@ const StaffList = () => {
 
     // Listen to real-time socket events
     const socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
-    socket.on('staffAdded', () => fetchStaffData());
+    socket.on('staffAdded',   () => fetchStaffData());
     socket.on('staffDeleted', () => fetchStaffData());
-    socket.on('saleAdded', () => fetchStaffData());
+    socket.on('saleAdded',    () => fetchStaffData());
     socket.on('meetingAssigned', () => fetchStaffData());
-
+    socket.on('leadAssigned', () => fetchStaffData());
+    socket.on('leadWon',      () => fetchStaffData());
     return () => socket.disconnect();
   }, []);
 
@@ -81,35 +85,59 @@ const StaffList = () => {
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   const getStaffStats = (staffId) => {
+    // Sales model data
     const staffSales = sales.filter(s => s.createdBy?._id === staffId || s.createdBy === staffId);
     const totalAmountINR = staffSales.reduce((acc, curr) => acc + (curr.amountINR || curr.amount || 0), 0);
-    const wonSales = staffSales.filter(s => s.status === 'won' || s.status === 'Won');
-    const wonAmountINR = wonSales.reduce((acc, curr) => acc + (curr.amountINR || curr.amount || 0), 0);
+    const wonSalesModel = staffSales.filter(s => ['won','Won'].includes(s.status));
+    const wonSalesAmount = wonSalesModel.reduce((acc, curr) => acc + (curr.amountINR || curr.amount || 0), 0);
     const staffMeetings = meetings.filter(m => m.assignedTo?._id === staffId || m.assignedTo === staffId);
 
-    // Monthly won breakdown for last 6 months
+    // Leads model data — source of truth for Won/Lost pipeline
+    const staffLeads = leads.filter(l =>
+      l.assignedTo?._id === staffId || l.assignedTo === staffId ||
+      l.createdBy?._id === staffId  || l.createdBy  === staffId
+    );
+    const wonLeads    = staffLeads.filter(l => ['Won','won'].includes(l.status));
+    const lostLeads   = staffLeads.filter(l => ['Lost','lost'].includes(l.status));
+    const activeLeads = staffLeads.filter(l => !['Won','won','Lost','lost'].includes(l.status));
+    const wonLeadValue = wonLeads.reduce((a, b) => a + (b.amountINR || 0), 0);
+    const totalLeadValue = staffLeads.reduce((a, b) => a + (b.amountINR || 0), 0);
+    const totalDecided = wonLeads.length + lostLeads.length;
+    const winRate = totalDecided > 0 ? Math.round((wonLeads.length / totalDecided) * 100) : 0;
+
+    // Monthly won breakdown for last 6 months (from leads)
     const now = new Date();
     const monthlyWon = Array.from({ length: 6 }, (_, i) => {
-      const idx = (now.getMonth() - 5 + i + 12) % 12;
-      const monthSales = staffSales.filter(s => {
-        const d = new Date(s.createdAt);
-        return !isNaN(d) && d.getMonth() === idx && (s.status === 'won' || s.status === 'Won');
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const monthWon = wonLeads.filter(l => {
+        const ld = new Date(l.createdAt);
+        return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth();
       });
       return {
-        label: MONTHS[idx],
-        won: monthSales.reduce((a, b) => a + (b.amountINR || b.amount || 0), 0)
+        label: d.toLocaleString('default', { month: 'short' }),
+        won: monthWon.reduce((a, b) => a + (b.amountINR || 0), 0),
+        count: monthWon.length
       };
     });
 
     return {
       salesCount: staffSales.length,
       totalAmountINR,
-      wonAmountINR,
-      wonCount: wonSales.length,
-      meetingsCount: staffMeetings.length,
-      staffSales,
+      wonSalesAmount,
       staffMeetings,
-      monthlyWon
+      staffSales,
+      monthlyWon,
+      // Lead-based stats
+      staffLeads,
+      wonLeads,
+      lostLeads,
+      activeLeads,
+      wonLeadValue,
+      totalLeadValue,
+      winRate,
+      wonCount: wonLeads.length,
+      lostCount: lostLeads.length,
+      activeCount: activeLeads.length,
     };
   };
 
@@ -199,14 +227,25 @@ const StaffList = () => {
                     </td>
                     <td>{s.email}</td>
                     <td>
+                      {/* Won deals from Lead model - source of truth */}
                       <div className="fw-bold text-success">
-                        ₹{stats.totalAmountINR.toLocaleString('en-IN')}
+                        ₹{getStaffStats(s._id).wonLeadValue.toLocaleString('en-IN')}
                       </div>
-                      <div className="text-muted" style={{ fontSize: '11px' }}>{stats.salesCount} Deals</div>
+                      <div className="d-flex gap-1 mt-1">
+                        <span style={{ fontSize: '10px', background: '#d1fae5', color: '#059669', borderRadius: '6px', padding: '1px 6px', fontWeight: 600 }}>
+                          ✓ {getStaffStats(s._id).wonCount} Won
+                        </span>
+                        <span style={{ fontSize: '10px', background: '#eef2ff', color: '#4f46e5', borderRadius: '6px', padding: '1px 6px', fontWeight: 600 }}>
+                          ~ {getStaffStats(s._id).activeCount} Active
+                        </span>
+                        <span style={{ fontSize: '10px', background: '#fee2e2', color: '#dc2626', borderRadius: '6px', padding: '1px 6px', fontWeight: 600 }}>
+                          ✗ {getStaffStats(s._id).lostCount} Lost
+                        </span>
+                      </div>
                     </td>
                     <td>
                       <Badge bg="info" className="px-3 py-2 rounded-pill">
-                        {stats.meetingsCount} Scheduled
+                        {getStaffStats(s._id).staffMeetings.length} Scheduled
                       </Badge>
                     </td>
                     <td>
@@ -264,23 +303,29 @@ const StaffList = () => {
                 const stats = getStaffStats(selectedStaff._id);
                 return (
                   <div>
-                    <h6 className="fw-bold mb-3">Performance Overview (INR ₹)</h6>
-                    <Row className="g-2 mb-3">
-                      <Col xs={6}>
-                        <div className="p-3 border rounded text-center">
-                          <div className="text-muted small">Total Sales</div>
-                          <div className="fw-bold text-primary">₹{stats.totalAmountINR.toLocaleString('en-IN')}</div>
-                          <div className="text-muted" style={{ fontSize: '10px' }}>{stats.salesCount} deals</div>
-                        </div>
-                      </Col>
-                      <Col xs={6}>
-                        <div className="p-3 border rounded text-center">
-                          <div className="text-muted small">Won Value</div>
-                          <div className="fw-bold text-success">₹{stats.wonAmountINR.toLocaleString('en-IN')}</div>
-                          <div className="text-muted" style={{ fontSize: '10px' }}>{stats.wonCount} closed</div>
-                        </div>
-                      </Col>
-                    </Row>
+                    <h6 className="fw-bold mb-3">Performance Overview — Leads Pipeline (₹)</h6>
+                    {/* Lead status breakdown */}
+                    <div className="d-flex gap-2 mb-3">
+                      <div className="flex-fill p-2 rounded-2 text-center" style={{ background: '#f0fdf4' }}>
+                        <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>🏆 Won</div>
+                        <div className="fw-bold" style={{ color: '#10b981', fontSize: '22px' }}>{stats.wonCount}</div>
+                        <div style={{ fontSize: '10px', color: '#059669' }}>₹{stats.wonLeadValue.toLocaleString('en-IN')}</div>
+                      </div>
+                      <div className="flex-fill p-2 rounded-2 text-center" style={{ background: '#eef2ff' }}>
+                        <div style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 700 }}>📋 Active</div>
+                        <div className="fw-bold" style={{ color: '#6366f1', fontSize: '22px' }}>{stats.activeCount}</div>
+                        <div style={{ fontSize: '10px', color: '#6366f1' }}>In progress</div>
+                      </div>
+                      <div className="flex-fill p-2 rounded-2 text-center" style={{ background: '#fef2f2' }}>
+                        <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 700 }}>❌ Lost</div>
+                        <div className="fw-bold" style={{ color: '#ef4444', fontSize: '22px' }}>{stats.lostCount}</div>
+                        <div style={{ fontSize: '10px', color: '#ef4444' }}>Closed lost</div>
+                      </div>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center mb-3 p-2 rounded-2" style={{ background: '#f8fafc' }}>
+                      <span className="text-muted small">Win Rate</span>
+                      <span className="fw-bold" style={{ color: stats.winRate >= 50 ? '#10b981' : '#ef4444' }}>{stats.winRate}%</span>
+                    </div>
 
                     <h6 className="fw-bold mb-2">Monthly Won Value (₹)</h6>
                     <div className="mb-3">

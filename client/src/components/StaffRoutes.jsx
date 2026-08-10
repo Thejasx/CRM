@@ -11,7 +11,7 @@ const StaffRoutes = () => (
     <Route path="overview" element={<StaffOverview />} />
     <Route path="sales" element={<SalesForm />} />
     <Route path="meetings" element={<AdminMeetingScheduler />} />
-    <Route path="leads" element={<SalesAndLeadManager />} />
+    <Route path="leads" element={<Navigate to="../sales" replace />} />
     <Route path="settings" element={<Settings />} />
     <Route path="*" element={<Navigate to="overview" replace />} />
   </Routes>

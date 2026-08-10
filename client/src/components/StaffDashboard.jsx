@@ -25,10 +25,10 @@ const StaffDashboard = () => {
           <div>
             {/* Logo */}
             <div className="crm-brand">
-              <div className="crm-brand-logo">
-                ⚡
+              <div className="login-logo-black py-1 px-2 me-1" style={{ fontSize: '16px', borderRadius: '8px' }}>
+                dipch
               </div>
-              <span className="crm-brand-name">CRM</span>
+              <span className="crm-brand-name" style={{ fontSize: '18px', fontWeight: 800 }}>CRM</span>
             </div>
 
             {/* Navigation Menu */}
@@ -37,13 +37,10 @@ const StaffDashboard = () => {
                 <FaThLarge /> Overview
               </NavLink>
               <NavLink to="/staff/sales" className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}>
-                <FaPlusCircle /> Add Sale (INR ₹)
+                <FaPlusCircle /> Add & Manage Sales (INR ₹)
               </NavLink>
               <NavLink to="/staff/meetings" className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}>
                 <FaCalendarAlt /> My Meetings
-              </NavLink>
-              <NavLink to="/staff/leads" className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}>
-                <FaUserTag /> Assigned Leads
               </NavLink>
               <NavLink to="/staff/settings" className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}>
                 <FaCog /> Settings & Integrations

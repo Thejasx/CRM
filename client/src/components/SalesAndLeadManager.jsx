@@ -3,7 +3,7 @@ import { Row, Col, Card, Form, Button, Table, Badge, InputGroup } from 'react-bo
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../context/AuthContext';
-import { FaUserTag, FaPlusCircle, FaRupeeSign, FaUserCheck, FaFilter } from 'react-icons/fa';
+import { FaUserTag, FaPlusCircle, FaRupeeSign, FaUserCheck, FaFilter, FaTrophy } from 'react-icons/fa';
 
 const SalesAndLeadManager = () => {
   const { user } = useContext(AuthContext);
@@ -85,6 +85,12 @@ const SalesAndLeadManager = () => {
     }
   };
 
+  // Won deals value only (not total pipeline)
+  const wonLeadValue = leads
+    .filter(l => ['Won','won'].includes(l.status))
+    .reduce((acc, curr) => acc + (curr.amountINR || 0), 0);
+
+  // Total pipeline value (all leads) for reference
   const totalLeadValueINR = leads.reduce((acc, curr) => acc + (curr.amountINR || 0), 0);
 
   return (
@@ -96,13 +102,14 @@ const SalesAndLeadManager = () => {
 
       <Row className="g-3 mb-4">
         <Col md={4}>
-          <Card className="crm-card p-3 d-flex align-items-center gap-3">
+          <Card className="crm-card p-3 d-flex align-items-center gap-3" style={{ borderLeft: '4px solid #10b981' }}>
             <div className="d-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle" style={{ width: '48px', height: '48px', fontSize: '22px' }}>
-              ₹
+              <FaTrophy />
             </div>
             <div>
-              <div className="text-muted small fw-semibold text-uppercase">Total Lead Pipeline Value</div>
-              <h4 className="fw-bold mb-0">₹{totalLeadValueINR.toLocaleString('en-IN')}</h4>
+              <div className="text-muted small fw-semibold text-uppercase">Won Sales Value (₹)</div>
+              <h4 className="fw-bold mb-0 text-success">₹{wonLeadValue.toLocaleString('en-IN')}</h4>
+              <div className="text-muted" style={{ fontSize: '11px' }}>Won deals only · not total pipeline</div>
             </div>
           </Card>
         </Col>
@@ -258,7 +265,7 @@ const SalesAndLeadManager = () => {
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="fw-bold mb-0">Assigned Leads & Deals</h5>
               <Badge bg="success" className="px-3 py-2 rounded-pill fs-6">
-                Total: ₹{totalLeadValueINR.toLocaleString('en-IN')}
+                Won: ₹{wonLeadValue.toLocaleString('en-IN')}
               </Badge>
             </div>
 
