@@ -18,29 +18,6 @@ const User = require('./models/User');
 // Load env vars
 dotenv.config();
 
-// Connect to MongoDB & Seed Admin
-connectDB().then(async () => {
-  try {
-    const adminExists = await User.findOne({ role: 'admin' });
-    if (!adminExists) {
-      const defaultAdmin = new User({
-        name: 'Central Admin',
-        email: 'admin@crm.com',
-        role: 'admin',
-      });
-      await defaultAdmin.setPassword('admin123');
-      await defaultAdmin.save();
-      console.log('----------------------------------------------------');
-      console.log('DEFAULT ADMIN CREATED:');
-      console.log('Email: admin@crm.com');
-      console.log('Password: admin123');
-      console.log('----------------------------------------------------');
-    }
-  } catch (e) {
-    console.error('Error seeding admin user:', e);
-  }
-});
-
 const app = express();
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
@@ -50,11 +27,53 @@ const io = new SocketIOServer(server, {
 // Make io accessible to routes/controllers via app locals
 app.locals.io = io;
 
+// CORS — allow requests from the frontend (env var) or any origin in development
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, 'http://localhost:3000']
+  : true; // true = allow all origins (safe for open APIs; lock down in production)
+
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
 // Middleware
-app.use(helmet());
-app.use(cors());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Pre-flight for all routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure DB connection & seed admin middleware for serverless & local
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    if (!global._adminSeeded) {
+      global._adminSeeded = true;
+      try {
+        const adminExists = await User.findOne({ role: 'admin' });
+        if (!adminExists) {
+          const defaultAdmin = new User({
+            name: 'Central Admin',
+            email: 'admin@crm.com',
+            role: 'admin',
+          });
+          await defaultAdmin.setPassword('admin123');
+          await defaultAdmin.save();
+          console.log('DEFAULT ADMIN CREATED: admin@crm.com / admin123');
+        }
+      } catch (e) {
+        console.error('Error seeding admin user:', e);
+      }
+    }
+    next();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -66,5 +85,9 @@ app.use('/api/leads', verifyToken, leadRoutes);
 // Simple health check
 app.get('/', (req, res) => res.send('CRM API is running'));
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+}
+
+module.exports = app;
