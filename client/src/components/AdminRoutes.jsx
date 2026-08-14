@@ -6,6 +6,7 @@ import AdminMeetingScheduler from './AdminMeetingScheduler';
 import SalesAndLeadManager from './SalesAndLeadManager';
 import Analytics from './Analytics';
 import Settings from './Settings';
+import AISalesSummary from './AISalesSummary';
 
 const AdminRoutes = () => (
   <Routes>
@@ -15,6 +16,7 @@ const AdminRoutes = () => (
     <Route path="leads" element={<SalesAndLeadManager />} />
     <Route path="analytics" element={<Analytics />} />
     <Route path="settings" element={<Settings />} />
+    <Route path="ai-summary" element={<AISalesSummary />} />
     <Route path="*" element={<Navigate to="dashboard" replace />} />
   </Routes>
 );

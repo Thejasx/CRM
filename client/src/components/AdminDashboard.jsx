@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import AdminRoutes from './AdminRoutes';
 import { io } from 'socket.io-client';
-import { FaThLarge, FaUsers, FaCalendarAlt, FaUserTag, FaChartLine, FaCog, FaSearch, FaBell, FaSignOutAlt } from 'react-icons/fa';
+import { FaThLarge, FaUsers, FaCalendarAlt, FaUserTag, FaChartLine, FaCog, FaSearch, FaBell, FaSignOutAlt, FaBrain } from 'react-icons/fa';
 import { ProgressBar, Button, Badge } from 'react-bootstrap';
 
 const AdminDashboard = () => {
@@ -50,6 +50,30 @@ const AdminDashboard = () => {
               </NavLink>
               <NavLink to="/admin/settings" className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}>
                 <FaCog /> Settings & Integrations
+              </NavLink>
+              {/* AI Sales Summary — Gemini AI powered */}
+              <NavLink
+                to="/admin/ai-summary"
+                className={({ isActive }) => `crm-nav-item ${isActive ? 'active' : ''}`}
+                style={({ isActive }) => ({
+                  background: isActive
+                    ? 'linear-gradient(135deg, #6366f1, #7c3aed)'
+                    : 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.08))',
+                  border: isActive ? 'none' : '1.5px solid rgba(99,102,241,0.2)',
+                  color: isActive ? '#ffffff' : '#6366f1',
+                  fontWeight: 700,
+                })}
+              >
+                <svg width="16" height="16" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                  <defs>
+                    <linearGradient id="sideGemGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="currentColor" />
+                      <stop offset="100%" stopColor="currentColor" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M14 2C14 2 15.5 9.5 22 14C15.5 18.5 14 26 14 26C14 26 12.5 18.5 6 14C12.5 9.5 14 2 14 2Z" fill="currentColor" />
+                </svg>
+                AI Sales Summary
               </NavLink>
             </nav>
           </div>
